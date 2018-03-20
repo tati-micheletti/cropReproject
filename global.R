@@ -1,16 +1,12 @@
-# global.R
-# 
-# Global needs to have the following:
-# 1. Allow for an example of the module: download data online (both raster and shapefile)
-# 2. Need to allow for using both raster or gdal packages for cropping
-# 3. Needs to be flexible (message) user on where to store the files if they have it or turn on the example files
-# 4. Chamge crs from randomPolygon function
 
-# BELOW TO MODIFY
+# For the .rmd file:
+# define each function
+# cropFormat = #GTiff" for .tif, "HFA" for .img, and "ascii" for ESRI .asc
+
+# test to see if I can change the output resolution or if it needs to be exactly the same as the original raster in gdalwrap func.
 
 library(SpaDES)
 
-## decide where you're working
 # set the directories
 workDirectory <- getwd()
 
@@ -24,22 +20,20 @@ paths <- list(
 setPaths(modulePath = paths$modulePath, inputPath = paths$inputPath, outputPath = paths$outputPath, cachePath = paths$cachePath)
 
 ## list the modules to use
-modules <- list("cropReproject") # 
+modules <- list("cropReproject")
 
 ## Set simulation and module parameters
 
-times <- list(start = 2009, end = 2020, timeunit = "year")
-parameters <- list(
-  .globals = list(.plotInitialTime = 1),
-  warblersPointCountBC = list(overrideModel = TRUE, start = 2009, end = 2011)
-)
-objects = list(areaLimits = "random", areaClass = "territory", areaName = "British Columbia", 
-               polyMatrix = matrix(c(-122.85, 52.04), ncol = 2), areaSize = 500000,
-               species = c("PISI","UEFL","YRWA","DEJU"))
-
-useSf = TRUE # <-------------------------------
-
-# objects = list(areaLimits = "random")
+times <- list(start = 1, end = 1, timeunit = "year")
+parameters <- list(useSf = TRUE)
+objects = list(rasterMap = NULL, 
+               areaLimits = NULL, 
+               areaName = NULL, 
+               filePathTemplate = NULL, 
+               polyMatrix = NULL, 
+               areaSize = NULL, 
+               croppedRasterName = NULL,
+               funcRast = "mask") #or "crop"
 
 dev.useRSGD(FALSE) # do not use Rstudio graphics device
 dev() # opens external (non-RStudio) device, which is faster
@@ -47,5 +41,5 @@ clearPlot()
 
 ## Simulation setup
 mySim <- simInit(times = times, params = parameters, modules = modules, paths =  paths, objects = objects)
-mySimOut <- spades(mySim, debug = TRUE) #c("warblersPointCountBC","init")
+system.time(mySimOut <- spades(mySim, debug = TRUE))
 
