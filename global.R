@@ -1,8 +1,4 @@
 
-# For the .rmd file:
-# define each function
-# cropFormat = #GTiff" for .tif, "HFA" for .img, and "ascii" for ESRI .asc
-
 # test to see if I can change the output resolution or if it needs to be exactly the same as the original raster in gdalwrap func.
 
 library(SpaDES)
@@ -33,7 +29,7 @@ objects = list(rasterMap = NULL,
                polyMatrix = NULL, 
                areaSize = NULL, 
                croppedRasterName = NULL,
-               funcRast = "mask") #or "crop"
+               funcRast = NULL) #"mask" or "crop"
 
 dev.useRSGD(FALSE) # do not use Rstudio graphics device
 dev() # opens external (non-RStudio) device, which is faster

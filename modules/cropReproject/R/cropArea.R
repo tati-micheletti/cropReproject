@@ -15,7 +15,7 @@ shapefileitory <- function(areaName = sim$areaName, sim = sim, filePathTemplate 
     shapefile <- load(filePathTemplate) %>%
      CAN_adm1[CAN_adm1$NAME_1 == areaName,]
     
-if (!(sp::CRS(shapefile)==raster::crs(rasterMap)){
+if (!(sp::CRS(shapefile)==raster::crs(rasterMap))){
   shapefile <- sp::spTransform(x = shapefile, CRS = raster::crs(rasterMap))}
   
   ifelse(useSf==TRUE,{

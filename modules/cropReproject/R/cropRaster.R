@@ -12,7 +12,7 @@ cropRaster <- function(sim = sim, filePathTemplate = sim$filePathTemplate,
   rasterMap <- raster(rasterMap)
   
   shaperaster <- raster::raster(filePathTemplate)
-  if (!(sp::CRS(shaperaster)==raster::crs(rasterMap)){
+  if (!(sp::CRS(shaperaster)==raster::crs(rasterMap))){
     shaperaster <- sp::spTransform(x = shaperaster, CRS = raster::crs(rasterMap))}
     
   if(useSf==TRUE){ # sf package
