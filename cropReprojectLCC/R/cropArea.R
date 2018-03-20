@@ -10,7 +10,7 @@ cropArea <- function(areaClass, areaName, localGADMFilename) {
     }
     )
     load(localGADMFilename)
-    inputMapPolygon <- CAN_adm1[CAN_adm1$NAME_1 == areaName,]}
+    cropPolygon <- CAN_adm1[CAN_adm1$NAME_1 == areaName,]}
   
   if (areaClass == "city") {
     
@@ -24,9 +24,9 @@ cropArea <- function(areaClass, areaName, localGADMFilename) {
     )
 
     load(file.path(getPaths()$modulePath,"cropReprojectLccAge/data","citiesCanada.RData"))
-    inputMapPolygon <- cities[cities$CSDNAME == areaName,]
+    cropPolygon <- cities[cities$CSDNAME == areaName,]
     }
-  inputMapPolygon <- sp::spTransform(x = inputMapPolygon, CRS = sp::CRS("+proj=lcc +lat_1=49 +lat_2=77 +lat_0=0 +lon_0=-95 +x_0=0 +y_0=0 +ellps=GRS80 +units=m +no_defs")) # CHANGE IF NOT WORKING WITH LCC05 PROJECTION!
+  cropPolygon <- sp::spTransform(x = cropPolygon, CRS = sp::CRS("+proj=lcc +lat_1=49 +lat_2=77 +lat_0=0 +lon_0=-95 +x_0=0 +y_0=0 +ellps=GRS80 +units=m +no_defs")) # CHANGE IF NOT WORKING WITH LCC05 PROJECTION!
   
-  return(invisible(inputMapPolygon))
+  return(invisible(cropPolygon))
 }
