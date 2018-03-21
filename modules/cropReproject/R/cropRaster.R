@@ -12,16 +12,16 @@ cropRaster <- function(sim = sim, filePathTemplate = sim$filePathTemplate,
   rasterMap <- raster(rasterMap)
   
   shaperaster <- raster::raster(filePathTemplate)
-  if (!(sp::CRS(shaperaster)==raster::crs(rasterMap))){
+  if (!(sp::proj4string(shapefile)==as.character(raster::crs(rasterMap)))){
     shaperaster <- sp::spTransform(x = shaperaster, CRS = raster::crs(rasterMap))}
     
   if(useSf==TRUE){ # sf package
     
     tryCatch(rasterMap[] <- rasterMap[])
     raster::writeRaster(shaperaster, file.path(outputPath(sim), "reprojectedRasterfile"), format = cropFormat)
-            cutlinePath <- file.path(outputPath(sim), paste0("reprojectedRasterfile", cropFormat))
-                                          
-            gdalwarp(srcfile = rasterMap, # Raster file path
+    cutlinePath <- file.path(outputPath(sim), paste0("reprojectedRasterfile", cropFormat))
+    
+            gdalwarp(srcfile = sim$rasterMap, # Raster file path
                       dstfile = croppedRasterName, # Cropped raster file name
                       overwrite=TRUE, # If you alreday have a raster with the same name and want to overwrite it
                       cutline = cutlinePath, # shaperaster path to use for masking

@@ -8,24 +8,27 @@ cropPolygon <- function(sim = sim, filePathTemplate = sim$filePathTemplate,
   library(gdalUtils)
   require(tools)
   require(rgdal)
+  require(sf)
     
   rasterMap <- raster(rasterMap)
-     
+
      if (tools::file_ext(filePathTemplate)=="rds"){
        shapefile <- readRDS(filePathTemplate)}
      if (tools::file_ext(filePathTemplate)=="shp"){
        shapefile <- readOGR(filePathTemplate)}
-     
-  if (!(sp::CRS(shapefile)==raster::crs(rasterMap))){
+  
+  if (!(sp::proj4string(shapefile)==as.character(raster::crs(rasterMap)))){
     shapefile <- sp::spTransform(x = shapefile, CRS = raster::crs(rasterMap))}
-
-    if(useSf==TRUE){ # sf package
-      
-      tryCatch(rasterMap[] <- rasterMap[])
-      rgdal::writeOGR(shapefile, file.path(outputPath(sim), "reprojectedShapefile"), driver="ESRI Shapefile")
-      cutlinePath <- file.path(outputPath(sim), "reprojectedShapefile.shp")
-
-      gdalwarp(srcfile = rasterMap, # Raster file path
+  
+  if(useSf==TRUE){
+    
+    tryCatch(rasterMap[] <- rasterMap[])
+    
+    shapefile <- as(shapefile, "SpatialPolygonsDataFrame")
+    rgdal::writeOGR(obj = shapefile, dsn = ".", layer = file.path(outputPath(sim), "reprojectedShapefile"), driver="ESRI Shapefile")
+    cutlinePath <- file.path(outputPath(sim), "reprojectedShapefile.shp")
+    
+      gdalwarp(srcfile = sim$rasterMap, # Raster file path
                dstfile = croppedRasterName, # Cropped raster file name
                overwrite=TRUE, # If you alreday have a raster with the same name and want to overwrite it
                cutline = cutlinePath, # Shapefile path to use for masking

@@ -1,5 +1,5 @@
 # cropReproject general module
-# 
+
 stopifnot(packageVersion("SpaDES") >= "1.3.1.9010")
 
 defineModule(sim, list(
@@ -20,7 +20,7 @@ defineModule(sim, list(
   timeunit = "year",
   citation = list("citation.bib"),
   documentation = list("README.txt", "cropReproject.Rmd"),
-  reqdPkgs = list("SpaDES","quickPlot","sp","raster","sf","rgdal","tools","reproducible","gdalUtils","rgeos"),
+  reqdPkgs = list("SpaDES","quickPlot","sp","raster","sf","rgdal","tools","reproducible","gdalUtils","rgeos","sf"),
   parameters = rbind(
     defineParameter(".plotInitialTime", "numeric", 1, NA, NA, "This describes the simulation time at which the first plot event should occur"),
     defineParameter(".plotInterval", "numeric", NA, NA, NA, "This describes the simulation time interval between plot events"),
@@ -35,7 +35,7 @@ defineModule(sim, list(
                  objectClass = c("rasterLayer", "character", "character", "character", 
                                  "matrix", "numeric", "character", "character",
                                  "character","logical"), 
-                 desc = c("Raster object/layer/map that you want to crop to your cropPolygon",
+                 desc = c("Raster object/layer/map that you want to crop",
                           "Choose between a 'defined' territory/shapefile/raster or a 'random' polygon.",
                           "Name of the territory to crop the raster to, 'polygon', or 'raster' to chose the type of area to crop to",
                           "File path to the shapefile/raster template to crop from", 
@@ -45,12 +45,13 @@ defineModule(sim, list(
                           "If not using sf, which raster function should be used: crop or mask?",
                           "Format of the output cropped raster: 'GTiff' for .tif, 'HFA' for .img, and 'ascii' for ESRI .asc",
                           "Should this module use the sf package for cropping?"),
-                 sourceURL = rep(NA, times = 8))
+                 sourceURL = rep(NA, times = 10))
   ),
   outputObjects = bind_rows(
-     createsOutput(objectName = "croppedRaster",
-                  objectClass = "rasterLayer",
-                  desc = "Raster object/layer/map cropped to your cropPolygon")
+    createsOutput(objectName = c("rasterMap","croppedRaster"),
+                  objectClass = c("rasterLayer","rasterLayer"),
+                  desc = c("Raster input which might be a module output if not provided",
+                           "Raster object/layer/map cropped to your cropPolygon"))
   )
 ))
 
@@ -58,7 +59,7 @@ doEvent.cropReproject = function(sim, eventTime, eventType) {
   switch(
     eventType,
     init = {
-
+      
       # do stuff for this event
       sim <- Init(sim)
       
@@ -69,23 +70,39 @@ doEvent.cropReproject = function(sim, eventTime, eventType) {
     },
     crop = {
       
-      browser()
+      if(is.null(sim$rasterMap)|!suppliedElsewhere(sim$rasterMap)){
+        invisible(readline(prompt="No raster to crop was provided. A sample raster (LCC2010, 250m) will be downloaded. Press [enter] to continue."))
+        sim$rasterMap <- downloadRaster(sim = sim)}
+      
+      if(!is.null(sim$rasterMap)&!file.exists(sim$rasterMap)){
+        invisible(readline(prompt="No raster to crop was provided. A sample raster (LCC2010, 250m) will be downloaded. Press [enter] to continue."))
+        sim$rasterMap <- downloadRaster(sim = sim)}
+      
+      sim$cropReproject$.inputObjects(sim)
       
       if (sim$areaLimits=="defined"){
         
         ifelse (areaName == "polygon",
-          sim$croppedRaster <- cropPolygon(sim = sim, filePathTemplate = sim$filePathTemplate, rasterMap = sim$rasterMap, useSf = sim$useSf),
-            ifelse(areaName == "raster",
-                sim$croppedRaster <- cropRaster(filePathTemplate = sim$filePathTemplate, 
-                                                rasterMap = sim$rasterMap, useSf = sim$useSf),
-                    sim$croppedRaster <- cropArea(areaName = sim$areaName, filePathTemplate = sim$filePathTemplate, 
-                                                  rasterMap = sim$rasterMap, useSf = sim$useSf)))
+                sim$croppedRaster <- cropPolygon(sim = sim, filePathTemplate = sim$filePathTemplate, 
+                                                 rasterMap = sim$rasterMap, useSf = sim$useSf, 
+                                                 croppedRasterName =sim$croppedRasterName, cropFormat = sim$cropFormat,
+                                                 funcRast = sim$funcRast),
+                ifelse(areaName == "raster",
+                       sim$croppedRaster <- cropRaster(sim = sim, filePathTemplate = sim$filePathTemplate, 
+                                                       rasterMap = sim$rasterMap, useSf = sim$useSf, 
+                                                       croppedRasterName =sim$croppedRasterName, cropFormat = sim$cropFormat),
+                       sim$croppedRaster <- cropArea(areaName = sim$areaName, sim = sim, filePathTemplate = sim$filePathTemplate, 
+                                                     rasterMap = sim$rasterMap, useSf = sim$useSf, 
+                                                     croppedRasterName =sim$croppedRasterName, cropFormat = sim$cropFormat,
+                                                  funcRast = sim$funcRast)))
       }
       
       if (sim$areaLimits=="random"){
         
         sim$croppedRaster <- cropRandomPolygon(polyMatrix = sim$polyMatrix, areaSize = sim$areaSize, 
-                                               rasterMap = sim$rasterMap, useSf = sim$useSf)
+                                               sim = sim, rasterMap = sim$rasterMap, useSf = sim$useSf, 
+                                               croppedRasterName =sim$croppedRasterName, cropFormat = sim$cropFormat,
+                                               funcRast = sim$funcRast)
       }
               
     },
@@ -114,6 +131,10 @@ Init <- function(sim) {
 
 .inputObjects <- function(sim) {
   
+  GTiff <- ".tif"
+  HFA <-  ".img"
+  ascii <- ".asc"
+  
   if (is.null(sim$useSf)|!suppliedElsewhere(sim$useSf)){
     sim$useSf <- TRUE # NOT SURE I NEED THIS HERE, AS IT IS SUPPLIED IN THE PARAMETERS. CONFIRM WITH ELIOT
     warning("Using Simple Features for R package (sf).", call. = FALSE)}
@@ -121,8 +142,8 @@ Init <- function(sim) {
     sim$cropFormat <- "GTiff"
     warning("Cropped raster format not provided. Using '.tiff'.", call. = FALSE)}
   if (is.null(sim$croppedRasterName)|!suppliedElsewhere(sim$croppedRasterName)){
-    sim$croppedRasterName <- file.path(outputPath(sim),paste0("croppedRaster",sim$cropFormat))
-    warning(paste0("Cropped raster name not provided. Using croppedRaster", sim$cropFormat), call. = FALSE)}
+    sim$croppedRasterName <- file.path(outputPath(sim),paste0("croppedRaster",get(sim$cropFormat)))
+    warning(paste0("Cropped raster name not provided. Using croppedRaster with format ", sim$cropFormat), call. = FALSE)}
   if (is.null(sim$polyMatrix)|!suppliedElsewhere(sim$polyMatrix)){
     sim$polyMatrix <- matrix(c(-122.85, 52.04), ncol = 2)
     warning(paste0("Random polygon coordinates not provided. Using random forested area."), call. = FALSE)}
@@ -142,12 +163,7 @@ Init <- function(sim) {
   if (is.null(sim$filePathTemplate)|!suppliedElsewhere(sim$filePathTemplate)){
     sim$filePathTemplate <- paste0(inputPath(sim),"fileTemplate.rds")
     warning("filePathTemplate not provided. Using inputPath of simList and a random polygon template.", call. = FALSE)}
-  
-  if(is.null(sim$rasterMap)|!suppliedElsewhere(sim$rasterMap)|!file.exists(sim$rasterMap)){
-    invisible(readline(prompt="No raster to crop was provided. A sample raster (LCC2010, 250m) will be downloaded. Press [enter] to continue."))
-    sim$rasterMap <- downloadRaster(sim = sim)
-  }
-  
+
   return(invisible(sim))
 }
 

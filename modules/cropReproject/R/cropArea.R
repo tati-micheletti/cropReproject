@@ -1,4 +1,4 @@
-shapefileitory <- function(areaName = sim$areaName, sim = sim, filePathTemplate = sim$filePathTemplate, 
+shapefile <- function(areaName = sim$areaName, sim = sim, filePathTemplate = sim$filePathTemplate, 
                           rasterMap = sim$rasterMap, useSf = sim$useSf, 
                           croppedRasterName =sim$croppedRasterName, cropFormat = sim$cropFormat,
                           funcRast = sim$funcRast){
@@ -8,23 +8,25 @@ shapefileitory <- function(areaName = sim$areaName, sim = sim, filePathTemplate 
   library(gdalUtils)
   require(tools)
   require(rgdal)
-  
+  require(sf)
+
   rasterMap <- raster(rasterMap)
   CAN_adm1 <- raster::getData("GADM", country="CAN", level=1, 
                                   path = dirname(filePathTemplate))
     shapefile <- load(filePathTemplate) %>%
      CAN_adm1[CAN_adm1$NAME_1 == areaName,]
     
-if (!(sp::CRS(shapefile)==raster::crs(rasterMap))){
+    if (!(sp::proj4string(shapefile)==as.character(raster::crs(rasterMap)))){
   shapefile <- sp::spTransform(x = shapefile, CRS = raster::crs(rasterMap))}
-  
-  ifelse(useSf==TRUE,{
     
-    tryCatch(rasterMap[] <- rasterMap[])
-    rgdal::writeOGR(shapefile, file.path(outputPath(sim), "reprojectedShapefile"), driver="ESRI Shapefile")
-    cutlinePath <- file.path(outputPath(sim), "reprojectedShapefile.shp")
-    
-    gdalwarp(srcfile = rasterMap, # Raster file path
+    ifelse(useSf==TRUE,{
+      
+      tryCatch(rasterMap[] <- rasterMap[])
+      shapefile <- as(shapefile, "SpatialPolygonsDataFrame")
+      rgdal::writeOGR(obj = shapefile, dsn = ".", layer = file.path(outputPath(sim), "reprojectedShapefile"), driver="ESRI Shapefile")
+      cutlinePath <- file.path(outputPath(sim), "reprojectedShapefile.shp")
+      
+      gdalwarp(srcfile = sim$rasterMap, # Raster file path
              dstfile = croppedRasterName, # Cropped raster file name
              overwrite=TRUE, # If you alreday have a raster with the same name and want to overwrite it
              cutline = cutlinePath, # Shapefile path to use for masking

@@ -1,6 +1,6 @@
 randomPolygon <- function(x, hectares) {
   
-  latLong <-   sp::CRS("+init=epsg:4326")
+  latLong <- sp::CRS("+init=epsg:4326")
   if(is(x, "SpatialPoints")) {
     if(is.na(crs(x))) { crs(x) <- latLong }
   } else {

@@ -1,6 +1,4 @@
 
-# test to see if I can change the output resolution or if it needs to be exactly the same as the original raster in gdalwrap func.
-
 library(SpaDES)
 
 # set the directories
@@ -21,8 +19,8 @@ modules <- list("cropReproject")
 ## Set simulation and module parameters
 
 times <- list(start = 1, end = 1, timeunit = "year")
-parameters <- list(useSf = TRUE)
-objects = list(rasterMap = NULL, 
+parameters <- list(useSf = FALSE)
+objects = list(rasterMap = NULL,
                areaLimits = NULL, 
                areaName = NULL, 
                filePathTemplate = NULL, 
