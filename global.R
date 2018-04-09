@@ -19,15 +19,11 @@ modules <- list("cropReproject")
 ## Set simulation and module parameters
 
 times <- list(start = 1, end = 1, timeunit = "year")
-parameters <- list(useSf = FALSE)
-objects = list(rasterMap = NULL,
-               areaLimits = NULL, 
-               areaName = NULL, 
-               filePathTemplate = NULL, 
-               polyMatrix = NULL, 
-               areaSize = NULL, 
-               croppedRasterName = NULL,
-               funcRast = NULL) #"mask" or "crop"
+parameters <- list(useGdal = TRUE)
+objects = list(rasterMap = c(file.path(getwd(),"data","can_age04_1km.tif"),file.path(getwd(),"data","LCC2005_V1_4a.tif")),
+               areaLimits = "defined",
+               areaName = "British Columbia", 
+               croppedRasterName = c(file.path(paths$outputPath,"ageMap"), file.path(paths$outputPath,"vegMap")))
 
 dev.useRSGD(FALSE) # do not use Rstudio graphics device
 dev() # opens external (non-RStudio) device, which is faster
